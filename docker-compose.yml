@@ -1,0 +1,21 @@
+version: "3.8"
+
+services:
+  postgres:
+    image: postgres:16.3-alpine
+    container_name: database
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg-data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: techtest
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: adminsecret
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d techtest"]
+      interval: 10s
+      timeout: 5s
+      retries: 5 
+volumes:
+  pg-data:
