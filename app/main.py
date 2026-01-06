@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from .config import Database, run_migration
-from .routers import users, products
+from .routers import users, products, orders
 from contextlib import asynccontextmanager
 
 @asynccontextmanager
@@ -13,6 +13,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(lifespan=lifespan)
 app.include_router(users.router)
 app.include_router(products.router)
+app.include_router(orders.router)
 
 @app.get("/api/v1/health")
 async def health():

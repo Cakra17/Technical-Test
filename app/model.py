@@ -25,3 +25,14 @@ class ProductPayload(BaseModel):
   name: str
   price: int
   stock: int
+
+class OrderPayload(BaseModel):
+  product_id: str
+  amount: int
+
+class Order(BaseModel):
+  id: UUID7
+  amount: int
+  total_price: int
+  status: str
+  created_at: Union[datetime, None]
