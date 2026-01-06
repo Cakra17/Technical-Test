@@ -6,13 +6,15 @@ logging.basicConfig(
   level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s"
 )
 
+logger = logging.getLogger(__name__)
+DSN = "postgresql://admin:adminsecret@localhost:5432/techtest"
+
 class Database:
   _pool: AsyncConnectionPool = None
 
   @classmethod
   async def init(cls, min_size: int, max_size: int) -> AsyncConnectionPool:
     if cls._pool is None:
-      DSN = "postgresql://admin:adminsecret@localhost:5432/techtest"
       cls._pool = AsyncConnectionPool(
         conninfo=DSN, 
         min_size=min_size, 
@@ -51,10 +53,12 @@ async def run_migration() -> None:
     )
     """,
     """
-    DROP TYPE IF EXISTS order_status CASCADE;
-    """,
-    """
-    CREATE TYPE order_status AS ENUM ('success', 'failed', 'pending');
+    DO $$
+    BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'order_status') THEN
+        CREATE TYPE order_status AS ENUM ('success', 'failed', 'pending');
+    END IF;
+    END$$;
     """,
     """
     CREATE TABLE IF NOT EXISTS orders (
