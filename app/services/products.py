@@ -1,6 +1,7 @@
-import logging
+from app.config import logger
 from app.config import Database
 from app.model import Product
+from typing import Union
 
 async def addProduct(product: Product) -> None:
   try:
@@ -11,10 +12,10 @@ async def addProduct(product: Product) -> None:
         """,
         (product.id, product.name, product.stock, product.price,)) 
   except Exception as e:
-    logging.error(f"Failed to insert {e}")
+    logger.error(f"Failed to insert {e}")
     raise
 
-async def getProducts(page: int, per_page: int):
+async def getProducts(page: int, per_page: int) -> list[Product]:
   try:
     async with Database.get_connection() as conn:
       async with conn.cursor() as cur:
@@ -34,10 +35,10 @@ async def getProducts(page: int, per_page: int):
           )
         return products
   except Exception as e:
-    logging.error(f"Failed to insert user {e}")
+    logger.error(f"Failed to insert user {e}")
     raise
 
-async def getProductById(productId: str):
+async def getProductById(productId: str) -> Union[Product,None]:
   try:
     async with Database.get_connection() as conn:
       async with conn.cursor() as cur:
@@ -54,7 +55,7 @@ async def getProductById(productId: str):
         else:
           return None
   except Exception as e:
-    logging.error(f"Failed to get user {e}")
+    logger.error(f"Failed to get user {e}")
     raise
 
 async def updateProduct(product: Product):
@@ -67,12 +68,12 @@ async def updateProduct(product: Product):
         (product.name, product.stock, product.price, product.id,))
 
         if cur.rowcount == 0:
-          logging.warning(f"No product found with ID: {product.id}")
+          logger.warning(f"No product found with ID: {product.id}")
           raise ValueError(f"Product with ID {product.id} not found")
   except ValueError:
     raise
   except Exception as e:
-    logging.error(f"Failed to update user {e}")
+    logger.error(f"Failed to update user {e}")
     raise
 
 async def deleteProduct(productId: str):
@@ -84,10 +85,10 @@ async def deleteProduct(productId: str):
         """,
         (productId,))
         if cur.rowcount == 0:
-          logging.warning(f"No product found with ID: {productId}")
+          logger.warning(f"No product found with ID: {productId}")
           raise ValueError(f"Product with ID {productId} not found")
   except ValueError:
     raise
   except Exception as e:
-    logging.error(f"Failed to delete user {e}")
+    logger.error(f"Failed to delete user {e}")
     raise

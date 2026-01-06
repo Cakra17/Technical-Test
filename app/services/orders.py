@@ -1,7 +1,7 @@
-import logging
 import uuid
 from app.config import Database
 from app.model import OrderPayload, Order
+from app.config import logger
 
 async def AddOrder(order: OrderPayload):
   try:
@@ -19,9 +19,10 @@ async def AddOrder(order: OrderPayload):
           await conn.execute("""
             INSERT INTO orders (id, product_id, amount, total_price, status) VALUES (%s, %s, %s, %s, %s)
           """,
-          (orderId, order.product_id, order.amount, total_price, "pending",)) 
+          (orderId, order.product_id, order.amount, total_price, "pending",))
+          return str(orderId)
   except Exception as e:
-    logging.error(f"Failed to insert {e}")
+    logger.error(f"Failed to insert {e}")
     raise
 
 async def getOrders(page: int, per_page: int):
@@ -44,7 +45,7 @@ async def getOrders(page: int, per_page: int):
           )
         return orders
   except Exception as e:
-    logging.error(f"Failed to get orders {e}")
+    logger.error(f"Failed to get orders {e}")
     raise
 
 async def getOrderById(orderId: str):
@@ -68,7 +69,7 @@ async def getOrderById(orderId: str):
         else:
           return None
   except Exception as e:
-    logging.error(f"Failed to get user {e}")
+    logger.error(f"Failed to get user {e}")
     raise
 
 async def validateOrder(orderId: str):
@@ -76,11 +77,11 @@ async def validateOrder(orderId: str):
     async with Database.get_connection() as conn:
       async with conn.transaction():
         async with conn.cursor() as cur:
-          await conn.execute("""
+          await cur.execute("""
               SELECT id, product_id, amount, total_price, status FROM orders WHERE id = %s FOR UPDATE
           """,
           (orderId,))
-          order = await conn.fetchone()
+          order = await cur.fetchone()
 
           if not order:
             raise ValueError("Order not found")
@@ -88,28 +89,31 @@ async def validateOrder(orderId: str):
           if order[4] != "pending":
             raise (f"Order {orderId} already processed with status {order[4]}")
 
-          await conn.execute("""
+          await cur.execute("""
               SELECT name, stock, price FROM products WHERE id = %s FOR UPDATE
           """,
           (order[1],))
-          product = await conn.fetchone()
+          product = await cur.fetchone()
 
           if order[2] > product[1]:
-            await conn.execute("""
+            await cur.execute("""
               UPDATE orders SET status = %s WHERE id = %s
             """,
-            ("failed", orderId))
+            ("failed", orderId,))
             raise ValueError(f"Insufficient stock for {product[0]}: need {order[2]}, available {product[1]}")
           
-          await conn.execute("""
+          await cur.execute("""
               UPDATE products SET stock = stock - %s WHERE id = %s
           """,
           (order[2], order[1],))
           
-          await conn.execute("""
+          await cur.execute("""
               UPDATE orders SET status = %s WHERE id = %s
           """,
           ("success", orderId,))
   except Exception as e:
-    logging.error(f"Failed to insert {e}")
+    conn.rollback()
+    logger.error(f"Failed to validate: {e}")
     raise 
+  else:
+    conn.commit()

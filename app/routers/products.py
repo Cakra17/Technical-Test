@@ -10,7 +10,7 @@ router = APIRouter(
   tags=["products"]
 )
 
-@router.post("/")
+@router.post("/", status_code=201)
 async def add_product(product: ProductPayload):
   try:
     productId = uuid.uuid7()
@@ -23,13 +23,13 @@ async def add_product(product: ProductPayload):
     )
     await addProduct(product=data)
     return {
-      "message": "Product created successfully"
+      "message": "Product created successfully",
     }
   except Exception as e:
     logging.error("Failed to insert product")
     raise HTTPException(status_code=500, detail=f"Failed to insert product: {e}")
 
-@router.get("/")
+@router.get("/", status_code=200)
 async def get_products(page: int = 1, per_page: int = 10):
   try:
     data = await getProducts(page=page, per_page=per_page)
@@ -43,7 +43,7 @@ async def get_products(page: int = 1, per_page: int = 10):
     logging.error(f"Failed to get product: {e}")
     raise HTTPException(status_code=500, detail=str(e))
 
-@router.get("/{productId}")
+@router.get("/{productId}", status_code=200)
 async def get_product_by_id(productId: str):
   try:
     data = await getProductById(productId=productId)
@@ -57,7 +57,7 @@ async def get_product_by_id(productId: str):
     logging.error(f"Failed to get product: {e}")
     raise HTTPException(status_code=500, detail=str(e))
 
-@router.put("/{productId}")
+@router.put("/{productId}", status_code=200)
 async def update_user(productId: str, payload: ProductPayload):
   try:
     data = Product(
@@ -75,7 +75,7 @@ async def update_user(productId: str, payload: ProductPayload):
     logging.error(f"Failed to update user: {e}")
     raise HTTPException(status_code=500, detail=str(e))
 
-@router.delete("/{productId}")
+@router.delete("/{productId}", status_code=200)
 async def delete_user(productId: str):
   try:
     await deleteProduct(productId=productId)
