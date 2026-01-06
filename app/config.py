@@ -42,18 +42,6 @@ class Database:
 async def run_migration() -> None:
   MIGRATIONS = [
     """
-    CREATE EXTENSION IF NOT EXISTS citext;
-    """,
-    """
-    CREATE TABLE IF NOT EXISTS users (
-      id UUID PRIMARY KEY,
-      name VARCHAR(255) NOT NULL,
-      address VARCHAR(255) NOT NULL,
-      email citext NOT NULL,
-      created_at TIMESTAMPTZ DEFAULT NOW()
-    )
-    """,
-    """
     CREATE TABLE IF NOT EXISTS products (
       id UUID PRIMARY KEY,
       name VARCHAR(255) NOT NULL,
@@ -63,32 +51,24 @@ async def run_migration() -> None:
     )
     """,
     """
-    CREATE TABLE IF NOT EXISTS orders (
-      id UUID PRIMARY KEY,
-      user_id UUID NOT NULL,
-      total_price NUMERIC(18,0) NOT NULL,
-      created_at TIMESTAMPTZ DEFAULT NOW(),
-      CONSTRAINT fk_orders_users
-        FOREIGN KEY (user_id)
-        REFERENCES users(id) ON DELETE RESTRICT
-    )
+    DROP TYPE IF EXISTS order_status CASCADE;
     """,
     """
-    CREATE TABLE IF NOT EXISTS order_items (
+    CREATE TYPE order_status AS ENUM ('success', 'failed', 'pending');
+    """,
+    """
+    CREATE TABLE IF NOT EXISTS orders (
       id UUID PRIMARY KEY,
-      order_id UUID NOT NULL,
       product_id UUID NOT NULL,
       amount INT NOT NULL,
-      price NUMERIC(18, 0) NOT NULL,
+      total_price NUMERIC(18,0) NOT NULL,
+      status order_status DEFAULT 'pending',
       created_at TIMESTAMPTZ DEFAULT NOW(),
-      CONSTRAINT fk_order_items_orders
-        FOREIGN KEY (order_id)
-        REFERENCES orders(id) ON DELETE RESTRICT,
       CONSTRAINT fk_order_items_products
         FOREIGN KEY (product_id)
         REFERENCES products(id) ON DELETE RESTRICT
     )
-    """
+    """,
   ]
 
   try:
