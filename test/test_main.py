@@ -1,7 +1,7 @@
 import pytest
 from httpx import AsyncClient, ASGITransport
 
-from .main import app
+from app.main import app
 
 @pytest.mark.anyio
 async def test_root():
