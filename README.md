@@ -20,7 +20,9 @@ cd Technical-Test
 
 ```bash
 # Build and start all services
-docker-compose up -d --build
+docker compose up -d --build
+# if using podman
+podman compose up -d --build
 ```
 
 This will start:
@@ -40,8 +42,9 @@ This will start:
 
 ```bash
 # Stop all services
-docker-compose down
-
+docker compose down
+# if using podman
+podman compose down
 ```
 
 ### 5. Running Test
