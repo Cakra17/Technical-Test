@@ -100,7 +100,13 @@ async def validateOrder(orderId: str):
               UPDATE orders SET status = %s WHERE id = %s
             """,
             ("failed", orderId,))
-            raise ValueError(f"Insufficient stock for {product[0]}: need {order[2]}, available {product[1]}")
+            return {
+              "order_id": orderId,
+              "status": "failed",
+              "reason": "insufficient_stock",
+              "product": product[0], 
+              "details": f"Need {order[2]}, available {product[1]}",
+            }
           
           await cur.execute("""
               UPDATE products SET stock = stock - %s WHERE id = %s
@@ -111,9 +117,12 @@ async def validateOrder(orderId: str):
               UPDATE orders SET status = %s WHERE id = %s
           """,
           ("success", orderId,))
+          return {
+            "order_id": orderId,
+            "status": "success",
+            "product": product[0],
+            "amount": order[2]
+          }
   except Exception as e:
-    conn.rollback()
     logger.error(f"Failed to validate: {e}")
-    raise 
-  else:
-    conn.commit()
+    raise

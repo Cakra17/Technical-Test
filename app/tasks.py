@@ -16,9 +16,13 @@ async def run(orderId: str):
     
     try:
         logger.info(f"Order {orderId} Processed")
-        await validateOrder(orderId=orderId)
+        res = await validateOrder(orderId=orderId)
         await asyncio.sleep(5)
-        logger.info("Process is finished, your order success")
+        if res["status"] == "failed":
+            logger.error(f"{res["reason"]}: {res["details"]}")
+            logger.info("Process is finished, your order failed")
+        elif res["status"] == "success":
+            logger.info("Process is finished, your order success")
     except Exception as e:
         logger.error(f"Order {orderId} validation failed: {e}")
         raise
