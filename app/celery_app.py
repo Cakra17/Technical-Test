@@ -5,7 +5,7 @@ from app.config import logger
 import asyncio
 
 os.environ.setdefault("FORKED_BY_MULTIPROCESSING", "1")
-redis_url = "redis://localhost:6379/0"
+redis_url = os.getenv("REDIS_URL","redis://redis:6379/0")
 celery_app = Celery(
   "jobs",
   broker= redis_url,
@@ -21,10 +21,8 @@ def init_worker(**kwargs):
     asyncio.run(Database.initialize(min_size=2, max_size=5))
     logger.info("Database pool initialized for Celery worker")
 
-# Close database pool when worker shuts down
 @worker_process_shutdown.connect
 def shutdown_worker(**kwargs):
-    """Close database connection pool when worker process shuts down"""
     from app.config import Database
     
     logger.info("Closing database pool for Celery worker...")
