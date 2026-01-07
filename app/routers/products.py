@@ -40,9 +40,10 @@ async def add_product(product: ProductPayload):
       stock=product.stock,
       created_at=None
     )
-    await addProduct(product=data)
+    res = await addProduct(product=data)
     return {
       "message": "Product created successfully",
+      "data": res
     }
   except Exception as e:
     logger.error("Failed to insert product")

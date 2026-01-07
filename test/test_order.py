@@ -27,7 +27,7 @@ async def test_add_order():
       )
     
     assert response.status_code == 201
-    assert response.json() == {"message": "Order is being processed"}
+    assert response.json() == {"message": "Order created and queued for processing", "order_id": "order_123"}
     mock_add_order.assert_called_once()
     mock_process.assert_called_once_with(mock_order_id)
 
@@ -125,8 +125,11 @@ async def test_get_order_by_id():
 
 @pytest.mark.anyio
 async def test_get_order_by_id_not_found():
-  with patch("app.routers.orders.getOrderById", new_callable=AsyncMock) as mock_get_order:
+   with patch("app.routers.orders.getOrderById", new_callable=AsyncMock) as mock_get_order, \
+    patch("app.routers.orders.rd") as mock_redis:
+    
     mock_get_order.return_value = None
+    mock_redis.get.return_value = None
     
     async with AsyncClient(
       transport=ASGITransport(app=app), base_url="http://localhost:8000"
@@ -134,4 +137,4 @@ async def test_get_order_by_id_not_found():
       response = await ac.get("/api/v1/orders/nonexistent_id")
     
     assert response.status_code == 404
-    assert response.json()["detail"] == "Product Not Found"
+    assert response.json()["detail"] == "Order Not Found"

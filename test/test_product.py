@@ -8,7 +8,16 @@ from app.main import app
 
 @pytest.mark.anyio
 async def test_add_product():
+  mock_return_data = {
+    "id": "019b96e9-27af-75a4-a4c8-12755693b966",
+    "name": "Test Product",
+    "price": 100,
+    "stock": 50
+  }
   with patch("app.routers.products.addProduct", new_callable=AsyncMock) as mock_add_product:
+
+    mock_add_product.return_value = mock_return_data
+
     async with AsyncClient(
       transport=ASGITransport(app=app), base_url="http://localhost:8000"
     ) as ac:
@@ -22,7 +31,11 @@ async def test_add_product():
       )
     
     assert response.status_code == 201
-    assert response.json() == {"message": "Product created successfully"}
+    expected_response = {
+        "message": "Product created successfully", 
+        "data": mock_return_data
+    }
+    assert response.json() == expected_response
     mock_add_product.assert_called_once()
 
 
@@ -119,8 +132,10 @@ async def test_get_product_by_id():
 
 @pytest.mark.anyio
 async def test_get_product_by_id_not_found():
-  with patch("app.routers.products.getProductById", new_callable=AsyncMock) as mock_get_product:
+  with patch("app.routers.products.getProductById", new_callable=AsyncMock) as mock_get_product, \
+   patch("app.routers.products.rd") as mock_redis:
     mock_get_product.return_value = None
+    mock_redis.get.return_value = None
     
     async with AsyncClient(
       transport=ASGITransport(app=app), base_url="http://localhost:8000"

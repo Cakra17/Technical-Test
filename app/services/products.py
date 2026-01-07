@@ -3,14 +3,22 @@ from app.config import Database
 from app.model import Product
 from typing import Union
 
-async def addProduct(product: Product) -> None:
+async def addProduct(product: Product) -> Product:
   try:
     async with Database.get_connection() as conn:
       async with conn.cursor() as cur:
         await cur.execute("""
-          INSERT INTO products (id, name, stock, price) VALUES (%s, %s, %s, %s);
+          INSERT INTO products (id, name, stock, price) VALUES (%s, %s, %s, %s) RETURNING created_at;
         """,
         (product.id, product.name, product.stock, product.price,)) 
+        res = await cur.fetchone()
+        return Product(
+          id=product.id,
+          name=product.name,
+          stock=product.stock,
+          price=product.price,
+          created_at=res[0]
+        )
   except Exception as e:
     logger.error(f"Failed to insert {e}")
     raise
@@ -58,7 +66,7 @@ async def getProductById(productId: str) -> Union[Product,None]:
     logger.error(f"Failed to get user {e}")
     raise
 
-async def updateProduct(product: Product):
+async def updateProduct(product: Product) -> None:
   try:
     async with Database.get_connection() as conn:
       async with conn.cursor() as cur:
@@ -76,7 +84,7 @@ async def updateProduct(product: Product):
     logger.error(f"Failed to update user {e}")
     raise
 
-async def deleteProduct(productId: str):
+async def deleteProduct(productId: str) -> None:
   try:
     async with Database.get_connection() as conn:
       async with conn.cursor() as cur:

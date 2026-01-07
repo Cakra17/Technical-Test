@@ -35,7 +35,8 @@ async def add_order(payload: OrderPayload):
     res = await AddOrder(payload)
     processOrder.delay(res)
     return {
-      "message": "Order is being processed"
+      "message": "Order created and queued for processing",
+      "order_id": res
     }
   except Exception as e:
     logger.error("Failed to insert order")
@@ -85,4 +86,4 @@ async def get_order_Id(orderId: str):
       "data": data
     }
   else:
-    raise HTTPException(status_code=404, detail="Product Not Found")
+    raise HTTPException(status_code=404, detail="Order Not Found")
