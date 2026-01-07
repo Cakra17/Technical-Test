@@ -1,4 +1,6 @@
 import logging
+import redis
+import os
 from psycopg_pool import AsyncConnectionPool
 from contextlib import asynccontextmanager
 
@@ -7,7 +9,9 @@ logging.basicConfig(
 )
 
 logger = logging.getLogger(__name__)
-DSN = "postgresql://admin:adminsecret@localhost:5432/techtest"
+DSN = os.getenv("DATABASE_URL","postgresql://admin:adminsecret@postgres:5432/techtest")
+
+rd = redis.Redis(host="redis", port=6379, decode_responses=True)
 
 class Database:
   _pool: AsyncConnectionPool = None
