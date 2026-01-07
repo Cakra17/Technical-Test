@@ -17,5 +17,74 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5 
+    networks:
+      - tq-net
+
+  redis:
+    image: redis:latest
+    container_name: cache
+    ports:
+      - "6379:6379"
+    environment:
+      REDIS_HOST: localhost:6379
+      REDIS_PASSWORD: 
+      REDIS_DB: 0
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - tq-net
+    volumes:
+      - rd-data:/data
+  
+  web-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: web-api
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app
+    environment:
+      - DATABASE_URL=postgresql://admin:adminsecret@postgres:5432/techtest
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - tq-net
+    restart: always
+
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: celery-worker
+    command: celery --app=app.celery_app worker --pool=threads --concurrency=2 --loglevel=info
+    volumes:
+      - .:/app
+    environment:
+      - DATABASE_URL=postgresql://admin:adminsecret@postgres:5432/techtest
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - tq-net
+    restart: always
+
+networks:
+  tq-net:
+    driver: bridge
+
 volumes:
   pg-data:
+  rd-data:
