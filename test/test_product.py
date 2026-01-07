@@ -1,6 +1,8 @@
 import pytest
+from datetime import datetime
 from httpx import AsyncClient, ASGITransport
 from unittest.mock import patch, AsyncMock
+from app.model import Product
 
 from app.main import app
 
@@ -47,13 +49,28 @@ async def test_add_product_failure():
 
 @pytest.mark.anyio
 async def test_get_products():
-  mock_products = [
-    {"id": "prod_1", "name": "Product 1", "price": 50, "stock": 10},
-    {"id": "prod_2", "name": "Product 2", "price": 75, "stock": 20}
+  mock_products: list[Product] = [
+    Product(
+      id="019b96e9-27af-75a4-a4c8-12755693b966",
+      name="kapas",
+      price=10000,
+      stock=100,
+      created_at=datetime.now()
+    ),
+    Product(
+      id="019b96e9-27af-75a4-a4c8-12755693b966",
+      name="batu",
+      price=10000,
+      stock=100,
+      created_at=datetime.now()
+    )
   ]
   
-  with patch("app.routers.products.getProducts", new_callable=AsyncMock) as mock_get_products:
+  with patch("app.routers.products.getProducts", new_callable=AsyncMock) as mock_get_products, \
+    patch("app.routers.products.rd") as mock_redis:
+    
     mock_get_products.return_value = mock_products
+    mock_redis.get.return_value = None
     
     async with AsyncClient(
       transport=ASGITransport(app=app), base_url="http://localhost:8000"
@@ -61,30 +78,43 @@ async def test_get_products():
       response = await ac.get("/api/v1/products/?page=1&per_page=10")
     
     assert response.status_code == 200
-    assert response.json() == {"data": mock_products}
+    data = response.json()["data"]
+    assert len(data) == 2
+    assert data[0]["id"] == "019b96e9-27af-75a4-a4c8-12755693b966"
+    assert data[0]["name"] == "kapas"
+    assert data[0]["price"] == 10000
+    assert data[0]["stock"] == 100
     mock_get_products.assert_called_once_with(page=1, per_page=10)
 
 
 @pytest.mark.anyio
 async def test_get_product_by_id():
-  mock_product = {
-    "id": "prod_123",
-    "name": "Test Product",
-    "price": 100,
-    "stock": 50
-  }
+  mock_product = Product(
+    id="019b96e9-27af-75a4-a4c8-12755693b966",
+    name="kapas",
+    price=10000,
+    stock=100,
+    created_at=datetime.now()
+  )
   
-  with patch("app.routers.products.getProductById", new_callable=AsyncMock) as mock_get_product:
+  with patch("app.routers.products.getProductById", new_callable=AsyncMock) as mock_get_product, \
+    patch("app.routers.products.rd") as mock_redis:
+    
     mock_get_product.return_value = mock_product
+    mock_redis.get.return_value = None
     
     async with AsyncClient(
       transport=ASGITransport(app=app), base_url="http://localhost:8000"
     ) as ac:
-      response = await ac.get("/api/v1/products/prod_123")
+      response = await ac.get("/api/v1/products/019b96e9-27af-75a4-a4c8-12755693b966")
     
     assert response.status_code == 200
-    assert response.json() == {"data": mock_product}
-    mock_get_product.assert_called_once_with(productId="prod_123")
+    data = response.json()["data"]
+    assert data["id"] == "019b96e9-27af-75a4-a4c8-12755693b966"
+    assert data["name"] == "kapas"
+    assert data["price"] == 10000
+    assert data["stock"] == 100
+    mock_get_product.assert_called_once_with(productId="019b96e9-27af-75a4-a4c8-12755693b966")
 
 
 @pytest.mark.anyio
