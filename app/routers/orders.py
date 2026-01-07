@@ -26,12 +26,9 @@ async def add_order(payload: OrderPayload):
 async def get_orders(page: int = 1, per_page: int = 10):
   try:
     data = await getOrders(page=page, per_page=per_page)
-    if data:
-      return {
-        "data": data
-      }
-    else:
-      raise HTTPException(status_code=404, detail="Product Not Found")
+    return {
+      "data": data
+    }
   except Exception as e:
     logging.error(f"Failed to get product: {e}")
     raise HTTPException(status_code=500, detail=str(e))
@@ -40,12 +37,13 @@ async def get_orders(page: int = 1, per_page: int = 10):
 async def get_order_Id(orderId: str):
   try:
     data = await getOrderById(orderId=orderId)
-    if data:
-      return {
-        "data": data
-      }
-    else:
-      raise HTTPException(status_code=404, detail="Product Not Found")
   except Exception as e:
     logging.error(f"Failed to get product: {e}")
     raise HTTPException(status_code=500, detail=str(e))
+  
+  if data:
+    return {
+      "data": data
+    }
+  else:
+    raise HTTPException(status_code=404, detail="Product Not Found")

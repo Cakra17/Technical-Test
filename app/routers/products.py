@@ -33,12 +33,9 @@ async def add_product(product: ProductPayload):
 async def get_products(page: int = 1, per_page: int = 10):
   try:
     data = await getProducts(page=page, per_page=per_page)
-    if data:
-      return {
-        "data": data
-      }
-    else:
-      raise HTTPException(status_code=404, detail="Product Not Found")
+    return {
+      "data": data
+    }
   except Exception as e:
     logging.error(f"Failed to get product: {e}")
     raise HTTPException(status_code=500, detail=str(e))
@@ -47,15 +44,16 @@ async def get_products(page: int = 1, per_page: int = 10):
 async def get_product_by_id(productId: str):
   try:
     data = await getProductById(productId=productId)
-    if data:
-      return {
-        "data": data
-      }
-    else:
-      raise HTTPException(status_code=404, detail="Product Not Found")
   except Exception as e:
     logging.error(f"Failed to get product: {e}")
     raise HTTPException(status_code=500, detail=str(e))
+  
+  if data is not None:
+    return {
+      "data": data
+    }
+  else:
+    raise HTTPException(status_code=404, detail="Product Not Found")
 
 @router.put("/{productId}", status_code=200)
 async def update_user(productId: str, payload: ProductPayload):
